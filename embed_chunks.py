@@ -48,12 +48,6 @@ def build_vector_db():
         return {"success": False, "error": f"Directory '{docs_dir}' does not exist"}
         
     files = [f for f in os.listdir(docs_dir) if f.lower().endswith(valid_extensions)]
-    
-    if not files:
-        print(f"No files to embed in '{docs_dir}/'. Please add files first.")
-        return {"success": False, "error": "No files found in docs/"}
-        
-    print("Step 1: Extracting text and chunking files...")
     chunks_text_list = []
     chunks_metadata = []
     
@@ -84,8 +78,13 @@ def build_vector_db():
             print(f"  - Error reading '{filename}': {e}")
 
     if not chunks_text_list:
-        print("No valid chunks were extracted from documents.")
-        return {"success": False, "error": "No valid chunks extracted"}
+        print("No document chunks to embed. Creating empty FAISS index and metadata...")
+        dimension = 384
+        index = faiss.IndexFlatL2(dimension)
+        faiss.write_index(index, index_file)
+        with open(metadata_file, "w", encoding="utf-8") as f:
+            json.dump([], f, ensure_ascii=False, indent=2)
+        return {"success": True, "total_files": 0, "total_chunks": 0, "total_vectors": 0}
         
     print(f"\nTotal chunks to embed: {len(chunks_text_list)}")
     print(f"Step 2: Loading SentenceTransformer model '{model_name}'...")
