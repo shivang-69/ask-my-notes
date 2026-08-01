@@ -132,7 +132,7 @@ export default function Home() {
     if (!file) return;
 
     setUploading(true);
-    setUploadStatus(`Uploading & indexing '${file.filename || file.name}'...`);
+    setUploadStatus(`Uploading & indexing '${file.name}'...`);
     setError(null);
 
     const formData = new FormData();
@@ -475,10 +475,25 @@ export default function Home() {
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <div className="bg-zinc-950/60 border border-zinc-900 rounded-2xl p-4 space-y-4">
+                  <div className="bg-zinc-950/60 border border-zinc-900 rounded-2xl p-4 space-y-3">
                     <p className="text-sm font-light text-zinc-200 leading-relaxed whitespace-pre-wrap">
                       {msg.content}
                     </p>
+
+                    {/* Clean Unique Citation Chips */}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="pt-3 border-t border-zinc-900/80 flex flex-wrap items-center gap-2">
+                        {Array.from(new Set(msg.sources.map((s) => s.filename))).map((filename, idx) => (
+                          <div
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-zinc-800/80 bg-zinc-900/80 text-[11px] font-mono text-zinc-300 shadow-sm"
+                          >
+                            <FileText className="w-3 h-3 text-indigo-400 shrink-0" />
+                            <span>{filename}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p>{msg.content}</p>
