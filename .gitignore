@@ -1,0 +1,18 @@
+# Environment variables and secrets
+.env
+.env*.local
+
+# Python cache & virtual environment
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# Vector database local cache
+index.faiss
+metadata.json
+
+# Node modules / Next.js builds
+node_modules/
+.next/
