@@ -6,12 +6,40 @@ import faiss
 from sentence_transformers import SentenceTransformer
 
 _model_cache = {}
+_index_cache = {}
 
-def get_model(model_name: str) -> SentenceTransformer:
+def get_model(model_name: str = "all-MiniLM-L6-v2") -> SentenceTransformer:
     if model_name not in _model_cache:
-        # Load the model locally without checking HuggingFace Hub online
-        _model_cache[model_name] = SentenceTransformer(model_name, local_files_only=True)
+        try:
+            # Try loading locally if model weights are already cached
+            _model_cache[model_name] = SentenceTransformer(model_name, local_files_only=True)
+        except Exception:
+            # Download model weights if not locally present
+            _model_cache[model_name] = SentenceTransformer(model_name)
     return _model_cache[model_name]
+
+def get_faiss_and_metadata(index_file: str = "index.faiss", metadata_file: str = "metadata.json"):
+    if not os.path.exists(index_file) or not os.path.exists(metadata_file):
+        raise FileNotFoundError(
+            f"Required files not found. Ensure '{index_file}' and '{metadata_file}' exist by running embed_chunks.py first."
+        )
+
+    index_mtime = os.path.getmtime(index_file)
+    meta_mtime = os.path.getmtime(metadata_file)
+
+    cache_key = (index_file, metadata_file)
+    if cache_key in _index_cache:
+        cached_idx, cached_meta, c_idx_mtime, c_meta_mtime = _index_cache[cache_key]
+        if c_idx_mtime == index_mtime and c_meta_mtime == meta_mtime:
+            return cached_idx, cached_meta
+
+    # Load from disk and update cache
+    index = faiss.read_index(index_file)
+    with open(metadata_file, "r", encoding="utf-8") as f:
+        metadata = json.load(f)
+
+    _index_cache[cache_key] = (index, metadata, index_mtime, meta_mtime)
+    return index, metadata
 
 def retrieve_query(
     query: str,
@@ -24,17 +52,10 @@ def retrieve_query(
     Embeds the user query and searches the FAISS index for the top-k most similar chunks.
     Returns a list of dictionaries containing match details and metadata.
     """
-    if not os.path.exists(index_file) or not os.path.exists(metadata_file):
-        raise FileNotFoundError(
-            f"Required files not found. Ensure '{index_file}' and '{metadata_file}' exist by running embed_chunks.py first."
-        )
+    # 1. Get cached FAISS index and metadata (reloaded automatically if files change)
+    index, metadata = get_faiss_and_metadata(index_file, metadata_file)
 
-    # 1. Load the FAISS index and metadata
-    index = faiss.read_index(index_file)
-    with open(metadata_file, "r", encoding="utf-8") as f:
-        metadata = json.load(f)
-
-    # 2. Get the cached SentenceTransformer model instance
+    # 2. Get cached SentenceTransformer model instance
     model = get_model(model_name)
 
     # 3. Embed the query and convert to float32 numpy array
