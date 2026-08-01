@@ -9,10 +9,6 @@ __pycache__/
 venv/
 .venv/
 
-# Vector database local cache
-index.faiss
-metadata.json
-
 # Node modules / Next.js builds
 node_modules/
 .next/

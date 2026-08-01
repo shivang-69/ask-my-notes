@@ -40,19 +40,15 @@ ALLOWED_EXTENSIONS = {".txt", ".pdf", ".md"}
 
 @app.on_event("startup")
 def startup_event():
-    index_file = "index.faiss"
-    metadata_file = "metadata.json"
-    
     if not os.path.exists(DOCS_DIR):
         os.makedirs(DOCS_DIR, exist_ok=True)
         
-    if not os.path.exists(index_file) or not os.path.exists(metadata_file):
-        print("Missing index.faiss or metadata.json on startup. Building vector index automatically from docs/...")
-        try:
-            summary = build_vector_db()
-            print(f"Startup vector index build complete: {summary}")
-        except Exception as e:
-            print(f"Warning: Failed to build initial vector database on startup: {e}")
+    index_file = "index.faiss"
+    metadata_file = "metadata.json"
+    if os.path.exists(index_file) and os.path.exists(metadata_file):
+        print("Pre-built FAISS index and metadata.json loaded successfully.")
+    else:
+        print("Warning: index.faiss or metadata.json not found on startup.")
 
 # Pydantic Schemas
 class AskRequest(BaseModel):
