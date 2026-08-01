@@ -16,6 +16,7 @@ app = FastAPI(
 allowed_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://ask-my-notes-rouge.vercel.app",
     "https://ask-my-notes-nav4.vercel.app",
 ]
 
@@ -23,13 +24,10 @@ env_origin = os.getenv("ALLOWED_ORIGIN")
 if env_origin and env_origin not in allowed_origins:
     allowed_origins.append(env_origin)
 
-# Fallback to wildcard if ALLOWED_ORIGIN is not explicitly set
-if not env_origin:
-    allowed_origins.append("*")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
